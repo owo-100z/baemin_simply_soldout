@@ -108,7 +108,7 @@ const showPopup = () => {
           top: 50%;
           left: 50%;
           transform: translate(-50%, -50%);
-          font-size: 20px;
+          font-size: 30px;
           text-align: center;
       }
   `;
@@ -138,21 +138,11 @@ const soldoutBtnClick = () => {
 
 // 3. 체크박스 클릭
 const selectProducts = () => {
-  const menuPanel = document.querySelectorAll('div[class^=menuPanel-module]');        // 메뉴패널
-  const optnPanel = document.querySelectorAll('div[class^=optionPanel-module]');      // 옵션패널
-
-  let chklist;
-  if (menuPanel.length > 0) {
-    chklist = menuPanel[0].querySelectorAll('input[type=checkbox]');
-
-  }
-  if (optnPanel.length > 0) {
-    chklist = optnPanel[0].querySelectorAll('input[type=checkbox]');
-  }
+  const chklist = document.querySelectorAll('div[class^=menuPanel] input[type=checkbox], div[class^=optionPanel] input[type=checkbox]');
 
   if (!chklist) return;
 
-  for(let chk of Array.from([...chklist])) {
+  for(let chk of Array.from(chklist)) {
     if(!chk.checked) {
       setTimeout(() => {
         chk.click();
@@ -177,13 +167,13 @@ const soldoutProc = async () => {
   if (Array.from(chklist).filter(t => t.checked).length === chklist.length) {
     menuSearch = false;
     const btn = Array.from(document.querySelectorAll('div[class^=menuPanel] button span, div[class^=optionPanel] button span')).filter(t => t.textContent === '품절하기')[0].closest('button');
-    if (btn) btn.click();
+    //if (btn) btn.click();
 
-    /*
-    setTimeout(() => {
-      location.href = '/menu';
-    }, 500);
-    */
+    let reload = 'https://self.baemin.com/menu';
+    if (location.href.indexOf('tab=option') > -1) {
+      reload = 'https://self.baemin.com/menu?tab=option';
+    }
+    setTimeout(() => { location.href = reload; }, 500);
   } else {
     selectProducts();
   }
@@ -223,7 +213,7 @@ function scrollDownBy(pixels) {
 }
 
 async function performScroll() {
-  await scrollDownBy(800); // 100px 아래로 스크롤
+  await scrollDownBy(500); // 100px 아래로 스크롤
 }
 
 // 감시할 대상 요소 선택 (예: 메인 콘텐츠 영역)
