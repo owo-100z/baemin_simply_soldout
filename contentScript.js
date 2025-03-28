@@ -167,7 +167,7 @@ const soldoutProc = async () => {
   if (Array.from(chklist).filter(t => t.checked).length === chklist.length) {
     menuSearch = false;
     const btn = Array.from(document.querySelectorAll('div[class^=menuPanel] button span, div[class^=optionPanel] button span')).filter(t => t.textContent === '품절하기')[0].closest('button');
-    //if (btn) btn.click();
+    if (btn) btn.click();
 
     let reload = 'https://self.baemin.com/menu';
     if (location.href.indexOf('tab=option') > -1) {
