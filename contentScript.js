@@ -175,13 +175,18 @@ const soldoutProc = async () => {
 
   const chklist = document.querySelectorAll('div[class^=menuPanel] input[type=checkbox], div[class^=optionPanel] input[type=checkbox]');
   if (Array.from(chklist).filter(t => t.checked).length === chklist.length) {
-    const btn = Array.from(document.querySelectorAll('div[class^=menuPanel] button span, div[class^=optionPanel] button span')).filter(t => t.textContent === '품절하기')[0].closest('button');
     menuSearch = false;
+    const btn = Array.from(document.querySelectorAll('div[class^=menuPanel] button span, div[class^=optionPanel] button span')).filter(t => t.textContent === '품절하기')[0].closest('button');
+    if (btn) btn.click();
+
+    /*
+    setTimeout(() => {
+      location.href = '/menu';
+    }, 500);
+    */
   } else {
     selectProducts();
   }
-  //if (btn) btn.click();
-  //location.href = '/menu';
 }
 
 // 5. 탭이동
