@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "배민 페이지 팝업 확장",
+  "version": "1.0",
+  "description": "특정 페이지 접속 시 팝업을 자동으로 표시하는 확장 프로그램",
+  "content_scripts": [
+    {
+      "matches": ["https://self.baemin.com/*"],
+      "js": ["contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["activeTab"]
+}
