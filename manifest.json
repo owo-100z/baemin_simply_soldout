@@ -5,7 +5,7 @@
   "description": "특정 페이지 접속 시 팝업을 자동으로 표시하는 확장 프로그램",
   "content_scripts": [
     {
-      "matches": ["https://self.baemin.com/*"],
+      "matches": ["https://self.baemin.com/*", "https://store.coupangeats.com/merchant/management/*"],
       "js": ["contentScript.js"],
       "run_at": "document_idle"
     }

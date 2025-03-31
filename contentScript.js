@@ -1,3 +1,4 @@
+const baemin = location.href.indexOf('self.baemin.com') > -1;
 const showPopup = () => {
   // 팝업 컨테이너 생성
   const popup = document.createElement('div');
@@ -121,12 +122,17 @@ let soldoutClick = false;
 
 // 1. 상품 검색
 const searchContents = (name) => {
-  document.querySelector('div[class^=menuPanel-module] input, div[class^=optionPanel-module] input').value = name;
-  document.querySelector('div[class^=menuPanel-module] input, div[class^=optionPanel-module] input').dispatchEvent(new Event('input', {
-    bubbles: true,
-    cancelable: true
-  }));
-  document.querySelector('button[aria-label=검색]').click();
+  if (baemin) {
+    document.querySelector('div[class^=menuPanel-module] input, div[class^=optionPanel-module] input').value = name;
+    document.querySelector('div[class^=menuPanel-module] input, div[class^=optionPanel-module] input').dispatchEvent(new Event('input', {
+      bubbles: true,
+      cancelable: true
+    }));
+    document.querySelector('button[aria-label=검색]').click();
+  } else {
+    const menulist = Array.from(document.querySelectorAll('input[type=checkbox][id^=sub_checkbox]')).map(t => t.closest('div.css-wuuhxc').querySelector('div[class*=sub_title] span'));
+    menulist.filter(t => t.textContent.indexOf(name) > -1).map(t => t.closest('div.css-wuuhxc').querySelector('input[type=checkbox]')).map(t => t.click());
+  }
 }
 
 // 2. 품절버튼 클릭
@@ -184,6 +190,17 @@ const tabChange = () => {
 
 }
 
+// a. 쿠팡 품절클릭
+const cpSoldoutClick = () => {
+  const soldoutBtn = Array.from(document.querySelectorAll('div.floating-popup span')).filter(t => t.textContent === '적용').map(t => t.closest('button'));
+  if (soldoutBtn.length > 0) {
+    //console.log('soldout Click!');
+    soldoutBtn[0].click();
+
+    setTimeout(() => { location.reload(); }, 500);
+  }
+}
+
 // 스크롤
 function scrollDownBy(pixels) {
   return new Promise((resolve) => {
@@ -218,6 +235,7 @@ async function performScroll() {
 
 // 감시할 대상 요소 선택 (예: 메인 콘텐츠 영역)
 const targetNode = document.querySelector('div.Frame');
+const cpTargetNode = document.querySelector('div#merchant-management');
 
 // 옵션 설정: 자식 노드의 변경과 하위 트리의 변경을 감지
 const config = { childList: true, subtree: true, attributes: true };
@@ -225,6 +243,7 @@ const config = { childList: true, subtree: true, attributes: true };
 // 콜백 함수: 변경 사항이 발생하면 호출됨
 const callback = function(mutationsList) {
   //console.log(mutationsList);
+  /* ==============================배민============================== */
   const menu = document.querySelector('p.MenuItem-module__U26g');                     // 선택된 메뉴
   const popup = document.querySelector('div.soldout-popup');                          // 품절 팝업
   const tab = document.querySelector('div[role=tablist]');                            // 메뉴옵션관리의 탭
@@ -275,48 +294,83 @@ const callback = function(mutationsList) {
   if (optnPanel.length > 0) {
     chkbox = optnPanel[0].querySelectorAll('input[type=checkbox]');
   }
+  /* ==============================배민============================== */
+
+
+
+  /* ==============================쿠팡============================== */
+  const cp = {
+    menuUl: document.querySelector('ul[class^=nav-side-bar]'),
+    menu: document.querySelector('ul[class^=nav-side-bar] li a.active'),
+    soldoutPopup: document.querySelector('div.floating-popup'),
+  }
+  /* ==============================쿠팡============================== */
 
   const attributesMutations = mutationsList.filter(t => t.type === 'attributes');
   const childListMutations = mutationsList.filter(t => t.type === 'childList');
 
   // 1. attribute의 변경
   if (attributesMutations.length > 0) {
-    //console.log(mutationsList);
-    // 1-1. menu의 변경
-    if (checkTarget(attributesMutations, menu).is) {
-      //init();
-
-      const menu_name = menu.textContent;
-
-      // 메뉴옵션관리 메뉴에 있을 때
-      if (menu_name && menu_name === '메뉴·옵션 관리') {
-        showPopup();
-      }
-      // 그 외의 경우
-      else {
-        // 팝업이 열려있다면 삭제(닫기)
-        if (popup) {
-          popup.remove();
+    if (baemin) {
+      // 1-1. menu의 변경
+      if (checkTarget(attributesMutations, menu).is) {
+        //init();
+  
+        const menu_name = menu.textContent;
+  
+        // 메뉴옵션관리 메뉴에 있을 때
+        if (menu_name && menu_name === '메뉴·옵션 관리') {
+          showPopup();
+        }
+        // 그 외의 경우
+        else {
+          // 팝업이 열려있다면 삭제(닫기)
+          if (popup) {
+            popup.remove();
+          }
         }
       }
-    }
+  
+      // 1-2. tab의 변경
+      if (checkTarget(attributesMutations, tab).is) {
+        //init();
+        //console.log(mutationsList);
+      }
+  
+      // 1-4. 취소버튼의 클릭
+      if (checkTarget(attributesMutations, soldoutBtn).is) {
+        //console.log('취소', mutationsList);
+      }
+  
+      // 1-5. 텍스트 입력필드의 변경
+      if (checkTarget(attributesMutations, textInput).is) {
+        // 텍스트 입력 이후부터 menuList의 변경을 감지한다
+        menuSearch = true;
+        //console.log(mutationsList);
+      }
+    } else {
+      // 1-a. menu의 변경
+      if (checkTarget(attributesMutations, cp.menu).is) {
+        const menu = cp.menu.querySelector('span.title');
+        const menu_name = menu?.textContent;
+  
+        // 품절숨김 메뉴에 있을 때
+        if (menu_name && menu_name === '품절 · 숨김') {
+          showPopup();
+        }
+        // 그 외의 경우
+        else {
+          // 팝업이 열려있다면 삭제(닫기)
+          if (popup) {
+            popup.remove();
+          }
+        }
+      }
 
-    // 1-2. tab의 변경
-    if (checkTarget(attributesMutations, tab).is) {
-      //init();
-      //console.log(mutationsList);
-    }
-
-    // 1-4. 취소버튼의 클릭
-    if (checkTarget(attributesMutations, soldoutBtn).is) {
-      //console.log('취소', mutationsList);
-    }
-
-    // 1-5. 텍스트 입력필드의 변경
-    if (checkTarget(attributesMutations, textInput).is) {
-      // 텍스트 입력 이후부터 menuList의 변경을 감지한다
-      menuSearch = true;
-      //console.log(mutationsList);
+      // 1-b. 품절항목 체크
+      if (checkTarget(attributesMutations, cp.soldoutPopup).is) {
+        cpSoldoutClick();
+      }
     }
   }
 
@@ -324,27 +378,48 @@ const callback = function(mutationsList) {
   if (childListMutations.length > 0) {
     //console.log(childListMutations);
 
-    // 2-1. menuList의 변경 (화면초기화 이후)
-    if (menuSearch && menuList && checkTarget(childListMutations, menuList).is) {
-      //console.log('menu', checkTarget(childListMutations, menuList).list);
-      soldoutBtnClick();
-    }
+    if (baemin) {
+      // 2-1. menuList의 변경 (화면초기화 이후)
+      if (menuSearch && menuList && checkTarget(childListMutations, menuList).is) {
+        //console.log('menu', checkTarget(childListMutations, menuList).list);
+        soldoutBtnClick();
+      }
+  
+      // 2-2. optnList의 변경 (화면초기화 이후)
+      if (menuSearch && optnList && checkTarget(childListMutations, optnList).is) {
+        //console.log('option', checkTarget(childListMutations, optnList).list);
+        soldoutBtnClick();
+      }
+  
+      // 2-3. 품절버튼의 클릭
+      if (!soldoutClick && chkbox && chkbox.length > 0) {
+        soldoutClick = true;
+        selectProducts();
+      }
+  
+      // 2-4. 찾는메뉴가 없을때
+      if (Array.from(document.querySelectorAll('div')).filter(t => t.textContent === '찾는 메뉴가 없어요.').length > 0) {
+        soldoutClick = true;
+      }
+    } else {
+      if (checkTarget(childListMutations, cp.menuUl).is) {
+        //console.log('새로고침 === ', checkTarget(childListMutations, cp.menuUl));
+        if (childListMutations.length > 1) return;
 
-    // 2-2. optnList의 변경 (화면초기화 이후)
-    if (menuSearch && optnList && checkTarget(childListMutations, optnList).is) {
-      //console.log('option', checkTarget(childListMutations, optnList).list);
-      soldoutBtnClick();
-    }
-
-    // 2-3. 품절버튼의 클릭
-    if (!soldoutClick && chkbox && chkbox.length > 0) {
-      soldoutClick = true;
-      selectProducts();
-    }
-
-    // 2-4. 찾는메뉴가 없을때
-    if (Array.from(document.querySelectorAll('div')).filter(t => t.textContent === '찾는 메뉴가 없어요.').length > 0) {
-      soldoutClick = true;
+        const menu_name = cp.menu.querySelector('span.title').textContent;
+  
+        // 품절숨김 메뉴에 있을 때
+        if (menu_name && menu_name === '품절 · 숨김') {
+          showPopup();
+        }
+        // 그 외의 경우
+        else {
+          // 팝업이 열려있다면 삭제(닫기)
+          if (popup) {
+            popup.remove();
+          }
+        }
+      }
     }
   }
 };
@@ -375,4 +450,9 @@ const init = () => {
 
 // MutationObserver 생성 및 대상 노드 감시 시작
 const observer = new MutationObserver(callback);
-observer.observe(targetNode, config);
+
+if (baemin) {
+  observer.observe(targetNode, config);
+} else {
+  observer.observe(cpTargetNode, config);
+}
