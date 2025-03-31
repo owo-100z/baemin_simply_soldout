@@ -7,7 +7,6 @@
 4. 상품추가
   - 확장프로그램 기본팝업 사용
   - chrome.storage 사용하여 저장/불러오기 기능 사용
-  - ![image](https://github.com/user-attachments/assets/0ed87bbf-e495-4977-ab91-b663aa00f03d)
 
 # 구성
 - manifest.json
