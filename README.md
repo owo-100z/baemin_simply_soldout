@@ -4,9 +4,11 @@
 3. 실행방법
   - 최초실행: [압축해제된 확장 프로그램을 로드합니다] 버튼 클릭
   - 업데이트: 저장된 확장프로그램 [새로고침]버튼 클릭
+  - ![image](https://github.com/user-attachments/assets/ae490ef3-33e8-4ec9-990e-22e328497ca4)
 4. 상품추가
   - 확장프로그램 기본팝업 사용
   - chrome.storage 사용하여 저장/불러오기 기능 사용
+  - ![image](https://github.com/user-attachments/assets/0ed87bbf-e495-4977-ab91-b663aa00f03d)
 
 # 구성
 - manifest.json
