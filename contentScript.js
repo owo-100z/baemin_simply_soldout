@@ -1,4 +1,7 @@
 const baemin = location.href.indexOf('self.baemin.com') > -1;
+
+const products = ['다리', '윙봉', '순살', '뼈'];
+
 const showPopup = () => {
   // 팝업 컨테이너 생성
   const popup = document.createElement('div');
@@ -21,30 +24,22 @@ const showPopup = () => {
   itemList.classList.add('item-list');
 
   // 항목 데이터 배열
-  const items = [
-    { id: 'product1', name: '다리' },
-    { id: 'product2', name: '윙봉' },
-    { id: 'product3', name: '순살' },
-    { id: 'product4', name: '뼈' },
-    // 추가 항목을 필요에 따라 추가
-  ];
+  const items = [...products];
 
   // 각 항목에 대한 요소 생성 및 추가
   items.forEach(item => {
     const listItem = document.createElement('li');
     listItem.classList.add('item');
-    listItem.dataset.id = item.id;
-    listItem.dataset.name = item.name;
 
     const itemSpan = document.createElement('span');
-    itemSpan.textContent = item.name;
+    itemSpan.textContent = item;
 
     listItem.appendChild(itemSpan);
     itemList.appendChild(listItem);
 
     // 항목 클릭 이벤트 추가
     listItem.onclick = function() {
-      searchContents(item.name);
+      searchContents(item);
       ischk = false;
       soldoutClick = false;
     };

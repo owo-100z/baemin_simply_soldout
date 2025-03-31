@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "배민 페이지 팝업 확장",
+  "name": "배민쿠팡 품절 간편화 1.0",
   "version": "1.0",
-  "description": "특정 페이지 접속 시 팝업을 자동으로 표시하는 확장 프로그램",
+  "description": "배민, 쿠팡 품절을 버튼으로 간단하게",
   "content_scripts": [
     {
       "matches": ["https://self.baemin.com/*", "https://store.coupangeats.com/merchant/management/*"],
