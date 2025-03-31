@@ -4,4 +4,5 @@ chrome://extensions 접속
 
 업데이트: [확장프로그램 새로고침]
 
-상품추가: {products : String Array}
+상품추가: 확장프로그램 기본팝업 사용
+chrom.storage 사용하여 저장/불러오기 기능 사용
