@@ -1,6 +1,11 @@
 const baemin = location.href.indexOf('self.baemin.com') > -1;
 
-const products = ['다리', '윙봉', '순살', '뼈'];
+let products = [];
+
+chrome.storage.local.get({ items: [] }, function(result) {
+  products = result.items;
+});
+
 
 const showPopup = () => {
   // 팝업 컨테이너 생성

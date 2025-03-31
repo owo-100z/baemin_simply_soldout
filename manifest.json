@@ -3,6 +3,9 @@
   "name": "배민쿠팡 품절 간편화 1.0",
   "version": "1.0",
   "description": "배민, 쿠팡 품절을 버튼으로 간단하게",
+  "action": {
+    "default_popup": "popup.html"
+  },
   "content_scripts": [
     {
       "matches": ["https://self.baemin.com/*", "https://store.coupangeats.com/merchant/management/*"],
@@ -10,5 +13,5 @@
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["activeTab"]
+  "permissions": ["activeTab", "storage"]
 }
