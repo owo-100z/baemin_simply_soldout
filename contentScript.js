@@ -122,7 +122,18 @@ let soldoutClick = false;
 
 // 1. 상품 검색
 const searchContents = (name) => {
+  menuSearch = true;
   if (baemin) {
+    // 품절버튼이 활성화 되어있는 경우는 일단 새로고침
+    if (location.href.indexOf('soldout') > -1) {
+      let reload = 'https://self.baemin.com/menu';
+      if (location.href.indexOf('tab=option') > -1) {
+        reload = 'https://self.baemin.com/menu?tab=option';
+      }
+      location.href = reload;
+      return;
+    }
+
     document.querySelector('div[class^=menuPanel-module] input, div[class^=optionPanel-module] input').value = name;
     document.querySelector('div[class^=menuPanel-module] input, div[class^=optionPanel-module] input').dispatchEvent(new Event('input', {
       bubbles: true,
@@ -144,11 +155,9 @@ const soldoutBtnClick = () => {
 
 // 3. 체크박스 클릭
 const selectProducts = () => {
-  const chklist = document.querySelectorAll('div[class^=menuPanel] input[type=checkbox], div[class^=optionPanel] input[type=checkbox]');
+  const chklist = Array.from(document.querySelectorAll('div[class^=menuPanel] input[type=checkbox], div[class^=optionPanel] input[type=checkbox]')).filter(t => !t.disabled);
 
-  if (!chklist) return;
-
-  for(let chk of Array.from(chklist)) {
+  for(let chk of chklist) {
     if(!chk.checked) {
       setTimeout(() => {
         chk.click();
@@ -159,7 +168,7 @@ const selectProducts = () => {
   setTimeout(() => {
     if (Array.from(chklist).filter(t => t.checked).length === chklist.length) {
       ischk = true;
-      console.log('check click finish');
+      //console.log('check click finish');
       soldoutProc();
     }
   }, 10);
@@ -167,10 +176,10 @@ const selectProducts = () => {
 
 // 4. 품절하기
 const soldoutProc = async () => {
-  await performScroll();
+  const isAtBottom = await performScroll();
 
-  const chklist = document.querySelectorAll('div[class^=menuPanel] input[type=checkbox], div[class^=optionPanel] input[type=checkbox]');
-  if (Array.from(chklist).filter(t => t.checked).length === chklist.length) {
+  const chklist = Array.from(document.querySelectorAll('div[class^=menuPanel] input[type=checkbox], div[class^=optionPanel] input[type=checkbox]')).filter(t => !t.disabled);
+  if (chklist.length > 0 && chklist.filter(t => t.checked).length === chklist.length) {
     menuSearch = false;
     const btn = Array.from(document.querySelectorAll('div[class^=menuPanel] button span, div[class^=optionPanel] button span')).filter(t => t.textContent === '품절하기')[0].closest('button');
     if (btn) btn.click();
@@ -181,7 +190,15 @@ const soldoutProc = async () => {
     }
     setTimeout(() => { location.href = reload; }, 500);
   } else {
-    selectProducts();
+    if (isAtBottom) {
+      let reload = 'https://self.baemin.com/menu';
+      if (location.href.indexOf('tab=option') > -1) {
+        reload = 'https://self.baemin.com/menu?tab=option';
+      }
+      location.href = reload;
+    } else {
+      selectProducts();
+    }
   }
 }
 
@@ -231,6 +248,14 @@ function scrollDownBy(pixels) {
 
 async function performScroll() {
   await scrollDownBy(500); // 100px 아래로 스크롤
+
+  if (isAtBottom()) {
+    return true;
+  }
+}
+
+function isAtBottom() {
+  return window.scrollY + window.innerHeight >= document.documentElement.scrollHeight;
 }
 
 // 감시할 대상 요소 선택 (예: 메인 콘텐츠 영역)
@@ -345,7 +370,8 @@ const callback = function(mutationsList) {
       // 1-5. 텍스트 입력필드의 변경
       if (checkTarget(attributesMutations, textInput).is) {
         // 텍스트 입력 이후부터 menuList의 변경을 감지한다
-        menuSearch = true;
+        // 2025.04.15 변경 => 품절할 상품을 클릭했을 때부터 menuList의 변경을 감지함!
+        // menuSearch = true;
         //console.log(mutationsList);
       }
     } else {
@@ -368,7 +394,7 @@ const callback = function(mutationsList) {
       }
 
       // 1-b. 품절항목 체크
-      if (checkTarget(attributesMutations, cp.soldoutPopup).is) {
+      if (menuSearch && checkTarget(attributesMutations, cp.soldoutPopup).is) {
         cpSoldoutClick();
       }
     }
@@ -392,13 +418,13 @@ const callback = function(mutationsList) {
       }
   
       // 2-3. 품절버튼의 클릭
-      if (!soldoutClick && chkbox && chkbox.length > 0) {
+      if (menuSearch && !soldoutClick && chkbox && chkbox.length > 0) {
         soldoutClick = true;
         selectProducts();
       }
   
       // 2-4. 찾는메뉴가 없을때
-      if (Array.from(document.querySelectorAll('div')).filter(t => t.textContent === '찾는 메뉴가 없어요.').length > 0) {
+      if (menuSearch && Array.from(document.querySelectorAll('div')).filter(t => t.textContent === '찾는 메뉴가 없어요.').length > 0) {
         soldoutClick = true;
       }
     } else {
@@ -452,6 +478,14 @@ const init = () => {
 const observer = new MutationObserver(callback);
 
 if (baemin) {
+  // 품절버튼이 활성화 되어있는 경우는 일단 새로고침
+  if (location.href.indexOf('soldout') > -1) {
+    let reload = 'https://self.baemin.com/menu';
+    if (location.href.indexOf('tab=option') > -1) {
+      reload = 'https://self.baemin.com/menu?tab=option';
+    }
+    location.href = reload;
+  }
   observer.observe(targetNode, config);
 } else {
   observer.observe(cpTargetNode, config);
