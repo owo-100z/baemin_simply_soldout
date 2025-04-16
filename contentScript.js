@@ -256,7 +256,8 @@ async function performScroll() {
 }
 
 function isAtBottom() {
-  return window.scrollY + window.innerHeight >= document.documentElement.scrollHeight;
+  const 보정치 = 10;
+  return window.scrollY + window.innerHeight + 보정치 >= document.documentElement.scrollHeight;
 }
 
 // 감시할 대상 요소 선택 (예: 메인 콘텐츠 영역)
