@@ -247,7 +247,8 @@ function scrollDownBy(pixels) {
 }
 
 async function performScroll() {
-  await scrollDownBy(500); // 100px 아래로 스크롤
+  const halfViewportHeight = window.innerHeight;
+  await scrollDownBy(halfViewportHeight);
 
   if (isAtBottom()) {
     return true;
