@@ -1,11 +1,9 @@
 const baemin = location.href.indexOf('self.baemin.com') > -1;
 
 let products = [];
-
 chrome.storage.local.get({ items: [] }, function(result) {
   products = result.items;
 });
-
 
 const showPopup = () => {
   // 팝업 컨테이너 생성
@@ -24,12 +22,21 @@ const showPopup = () => {
   const title = document.createElement('h3');
   title.textContent = '품절 처리할 상품 선택';
 
+  // const button = document.createElement('button');
+  // button.textContent = '테스트 버튼';
+  // button.onclick = async function() {
+  //     // 테스트 버튼 클릭 시 동작
+  //     let result = await soldoutOption([]); //테스트
+  //     //console.log('테스트 결과:', result);
+  // };
+
   // 항목 리스트 생성
   const itemList = document.createElement('ul');
   itemList.classList.add('item-list');
 
   // 항목 데이터 배열
   const items = [...products];
+  console.log('품절처리할 상품 목록:', items);
 
   // 각 항목에 대한 요소 생성 및 추가
   items.forEach(item => {
@@ -53,6 +60,7 @@ const showPopup = () => {
   // 팝업에 요소 추가
   popup.appendChild(closeButton);
   popup.appendChild(title);
+  // popup.appendChild(button);
   popup.appendChild(itemList);
 
   // 팝업을 body에 추가
@@ -121,25 +129,49 @@ let ischk = false;
 let soldoutClick = false;
 
 // 1. 상품 검색
-const searchContents = (name) => {
+const searchContents = async (name) => {
   menuSearch = true;
   if (baemin) {
-    // 품절버튼이 활성화 되어있는 경우는 일단 새로고침
-    if (location.href.indexOf('soldout') > -1) {
-      let reload = 'https://self.baemin.com/menu';
-      if (location.href.indexOf('tab=option') > -1) {
-        reload = 'https://self.baemin.com/menu?tab=option';
+    // 배민 API를 통해 품절처리하도록 수정
+    const menuIdList = ConstanceMenuList[name] || [];
+    const optionIdList = ConstanceOptionList[name] || [];
+    if (menuIdList.length > 0) {
+      //console.log('품절처리할 메뉴 ID:', menuIdList);
+      await soldoutMenu(menuIdList).then(result => {
+        //console.log('품절처리 결과:', result);
       }
-      location.href = reload;
-      return;
+      ).catch(error => {
+        //console.error('품절처리 실패:', error);
+      });
+    }
+    if (optionIdList.length > 0) {
+      //console.log('품절처리할 옵션 ID:', optionIdList);
+      await soldoutOption(optionIdList).then(result => {
+        //console.log('품절처리 결과:', result);
+      }
+      ).catch(error => {
+        //console.error('품절처리 실패:', error);
+      });
     }
 
-    document.querySelector('div[class^=menuPanel-module] input, div[class^=optionPanel-module] input').value = name;
-    document.querySelector('div[class^=menuPanel-module] input, div[class^=optionPanel-module] input').dispatchEvent(new Event('input', {
-      bubbles: true,
-      cancelable: true
-    }));
-    document.querySelector('button[aria-label=검색]').click();
+    alert(`품절해제 완료: ${name}`);
+
+    // // 품절버튼이 활성화 되어있는 경우는 일단 새로고침
+    // if (location.href.indexOf('soldout') > -1) {
+    //   let reload = 'https://self.baemin.com/menu';
+    //   if (location.href.indexOf('tab=option') > -1) {
+    //     reload = 'https://self.baemin.com/menu?tab=option';
+    //   }
+    //   location.href = reload;
+    //   return;
+    // }
+
+    // document.querySelector('div[class^=menuPanel-module] input, div[class^=optionPanel-module] input').value = name;
+    // document.querySelector('div[class^=menuPanel-module] input, div[class^=optionPanel-module] input').dispatchEvent(new Event('input', {
+    //   bubbles: true,
+    //   cancelable: true
+    // }));
+    // document.querySelector('button[aria-label=검색]').click();
   } else {
     const menulist = Array.from(document.querySelectorAll('input[type=checkbox][id^=sub_checkbox]')).map(t => t.closest('div.css-wuuhxc').querySelector('div[class*=sub_title] span'));
     menulist.filter(t => t.textContent.indexOf(name) > -1).map(t => t.closest('div.css-wuuhxc').querySelector('input[type=checkbox]')).map(t => t.click());
@@ -271,7 +303,7 @@ const config = { childList: true, subtree: true, attributes: true };
 const callback = function(mutationsList) {
   //console.log(mutationsList);
   /* ==============================배민============================== */
-  const menu = document.querySelector('p.MenuItem-module__U26g');                     // 선택된 메뉴
+  const menu = document.querySelector('p.LNBItem-module__zQ_w');                      // 선택된 메뉴
   const popup = document.querySelector('div.soldout-popup');                          // 품절 팝업
   const tab = document.querySelector('div[role=tablist]');                            // 메뉴옵션관리의 탭
   const btnArea = document.querySelectorAll('div[class^=actionPart]');                // 버튼영역
@@ -344,6 +376,7 @@ const callback = function(mutationsList) {
         //init();
   
         const menu_name = menu.textContent;
+        //console.log('menu_name:', menu_name);
   
         // 메뉴옵션관리 메뉴에 있을 때
         if (menu_name && menu_name === '메뉴·옵션 관리') {
@@ -481,14 +514,457 @@ const observer = new MutationObserver(callback);
 
 if (baemin) {
   // 품절버튼이 활성화 되어있는 경우는 일단 새로고침
-  if (location.href.indexOf('soldout') > -1) {
-    let reload = 'https://self.baemin.com/menu';
-    if (location.href.indexOf('tab=option') > -1) {
-      reload = 'https://self.baemin.com/menu?tab=option';
-    }
-    location.href = reload;
-  }
-  observer.observe(targetNode, config);
+  // if (location.href.indexOf('soldout') > -1) {
+  //   let reload = 'https://self.baemin.com/menu';
+  //   if (location.href.indexOf('tab=option') > -1) {
+  //     reload = 'https://self.baemin.com/menu?tab=option';
+  //   }
+  //   location.href = reload;
+  // }
+  //observer.observe(targetNode, config);
+  setTimeout(() => {
+    showPopup();
+  }, 10);
 } else {
   observer.observe(cpTargetNode, config);
 }
+
+// ======================================================
+
+// 배민 헤더 세팅
+const headers = {
+  baemin: {
+    'Content-Type': 'application/json',
+    'service-channel': 'SELF_SERVICE_PC',
+  },
+  coupang: {
+    'Content-Type': 'application/json',
+  },
+}
+
+let shopInfo = {};
+
+const ConstanceMenuList = {
+  '다리': [1010233388, 1010233389],
+  '윙봉': [1010233419, 1010233390, 1010233389],
+  '순살': [1010233393, 1010233405],
+}
+
+const ConstanceOptionList = {
+  '다리': [2344274865, 2344274867, 2351531904, 2344274841, 2344274843, 2344274822],
+  '윙봉': [2344274866, 2344274867, 2351531905, 2344274842, 2344274843, 2344274821],
+  '순살': [2344274864, 2344274862, 2344274840, 2344274820],
+  '뼈': [2344274863, 2344274861, 2344274839, 2344274819]
+}
+
+// URL 모음 S ====================
+const OWNER_INFO_URL = 'https://self-api.baemin.com/v1/session/profile';
+const SHOP_INFO_URL = 'https://self-api.baemin.com/v4/store/shops/search';
+const OWNER_URL_V1 = 'https://self-api.baemin.com/v1/menu-sys/core/v1/shop-owners/';
+const OWNER_URL_V2 = 'https://self-api.baemin.com/v1/menu-sys/core/v2/shop-owners/';
+const GET_MENU_LIST_URL = '/menus/one-shop';
+const SOLDOUT_MENU_URL = '/status/menus/soldout';
+const ACTIVE_MENU_URL = '/status/menus/active';
+const GET_OPTION_GROUP_URL = '/option-groups';
+const SOLDOUT_OPTION_URL = '/status/options/soldout';
+const ACTIVE_OPTION_URL = '/status/options/active';
+// URL 모음 E ====================
+
+// 쿠키조회
+const getCookies = () => {
+  return document.cookie.split('; ').reduce((acc, cookie) => {
+    const [name, value] = cookie.split('=');
+    try {
+      acc[name] = JSON.parse(value); // JSON이면 파싱
+    } catch {
+      // 아니면 그대로 저장
+      acc[name] = value;
+    }
+    return acc;
+  }, {});
+}
+
+// URL 파라미터 생성 함수
+const makeGetParams = (params) => {
+  return '?' + Object.keys(params).map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`).join('&');
+}
+
+// API 호출 함수
+const ApiCall = async (url, method = 'GET', body = null) => {
+  try {
+    const options = {
+      method: method,
+      credentials: 'include',
+      headers: headers.baemin,
+    };
+    
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
+    const response = await fetch(url, options);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    //console.error('API Call Error:', error);
+  }
+}
+
+const getOwnerInfo = async () => {
+  try {
+    const url = OWNER_INFO_URL;
+    const data = await ApiCall(url);
+    shopInfo.owner = data;
+  } catch (error) {
+    //console.error('Failed to fetch owner info:', error);
+  }
+}
+
+const getShopInfo = async () => {
+  if (!shopInfo.owner) {
+    await getOwnerInfo();
+  }
+  if (!shopInfo.owner) {
+    //console.error('Owner info is not available.');
+    return;
+  }
+  if (!shopInfo.owner.shopOwnerNumber) {
+    //console.error('Shop owner number is not available.');
+    return;
+  }
+
+  const params = {
+    shopOwnerNo: shopInfo.owner.shopOwnerNumber,
+  };
+
+  try {
+    const url = SHOP_INFO_URL + makeGetParams(params);
+    const data = await ApiCall(url);
+    shopInfo.shops = data;
+  } catch (error) {
+    //console.error('Failed to fetch shop info:', error);
+  }
+}
+
+const getOptions = async (page = 1, optionName = '') => {
+  if (!shopInfo.owner || !shopInfo.shops) {
+    //console.error('Owner or shop info is not available.');
+    return;
+  }
+  const shop = shopInfo.shops?.content?.at(0);
+  if (!shop) {
+    //console.error('Shop information is not available.');
+    return;
+  }
+  const params = {
+    optionName: optionName,
+    page: optionName ? 0 : page,
+    size: 20,
+  };
+  const OWNER_OPTION_GROUP_URL = OWNER_URL_V1 + shopInfo.owner.shopOwnerNumber + GET_OPTION_GROUP_URL;
+  try {
+    const url = OWNER_OPTION_GROUP_URL + makeGetParams(params);
+    const data = await ApiCall(url);
+    //console.log('Fetched options:', data?.data?.content);
+    return data?.data?.content?.reduce((acc, group) => {
+      if (group.options && group.options.length > 0) {
+        group.options.forEach(option => {
+          acc.push({
+            ...option,
+            groupName: group.name,
+            groupId: group.id,
+          });
+        });
+      }
+      return acc;
+    }
+    , []) || [];
+  } catch (error) {
+    //console.error('Failed to fetch options:', error);
+  }
+}
+
+const getMenuList = async (page = 1, menuName = '') => {
+  if (!shopInfo.owner || !shopInfo.shops) {
+    //console.error('Owner or shop info is not available.');
+    return;
+  }
+
+  const shop = shopInfo.shops?.content?.at(0);
+  if (!shop) {
+    //console.error('Shop information is not available.');
+    return;
+  }
+
+  const params = {
+    shopId: shop.shopNo,
+    menuName: menuName,
+    page: menuName ? 0 : page,
+    size: 20,
+  };
+
+  const OWNER_MENU_LIST_URL = OWNER_URL_V2 + shopInfo.owner.shopOwnerNumber + GET_MENU_LIST_URL;
+
+  try {
+    const url = OWNER_MENU_LIST_URL + makeGetParams(params);
+    const data = await ApiCall(url);
+    return data?.data?.content || [];
+  } catch (error) {
+    //console.error('Failed to fetch menu list:', error);
+  }
+}
+
+const soldoutMenu = async (menuIds) => {
+  if (!shopInfo.owner || !shopInfo.shops) {
+    //console.error('Owner or shop info is not available.');
+    return;
+  }
+
+  const shop = shopInfo.shops?.content?.at(0);
+  if (!shop) {
+    //console.error('Shop information is not available.');
+    return;
+  }
+
+  if (!Array.isArray(menuIds) || menuIds.length === 0) {
+    //console.error('Menu IDs must be a non-empty array.');
+    return;
+  }
+
+  const params = {
+    menuIds: menuIds,
+    restockedAt: null, // 입력된 일시까지 품절 처리
+  };
+
+  const OWNER_SOLDOUT_MENU_URL = OWNER_URL_V2 + shopInfo.owner.shopOwnerNumber + SOLDOUT_MENU_URL;
+
+  try {
+    const url = OWNER_SOLDOUT_MENU_URL;
+    const data = await ApiCall(url, 'PUT', params);
+    return data;
+  } catch (error) {
+    //console.error('Failed to soldout menu:', error);
+  }
+}
+
+const activeMenu = async (menuIds) => {
+  if (!shopInfo.owner || !shopInfo.shops) {
+    //console.error('Owner or shop info is not available.');
+    return;
+  }
+
+  const shop = shopInfo.shops?.content?.at(0);
+  if (!shop) {
+    //console.error('Shop information is not available.');
+    return;
+  }
+
+  if (!Array.isArray(menuIds) || menuIds.length === 0) {
+    //console.error('Menu IDs must be a non-empty array.');
+    return;
+  }
+
+  const params = {
+    menuIds: menuIds,
+  };
+
+  const OWNER_ACTIVE_MENU_URL = OWNER_URL_V2 + shopInfo.owner.shopOwnerNumber + ACTIVE_MENU_URL;
+
+  try {
+    const url = OWNER_ACTIVE_MENU_URL;
+    const data = await ApiCall(url, 'PUT', params);
+    return data;
+  } catch (error) {
+    //console.error('Failed to activate menu:', error);
+  }
+}
+
+const soldoutOption = async (optionIds) => {
+  if (!shopInfo.owner || !shopInfo.shops) {
+    //console.error('Owner or shop info is not available.');
+    return;
+  }
+  const shop = shopInfo.shops?.content?.at(0);
+  if (!shop) {
+    //console.error('Shop information is not available.');
+    return;
+  }
+  if (!Array.isArray(optionIds) || optionIds.length === 0) {
+    //console.error('Option IDs must be a non-empty array.');
+    return;
+  }
+  const params = {
+    optionIds: optionIds,
+  };
+  const OWNER_SOLDOUT_OPTION_URL = OWNER_URL_V2 + shopInfo.owner.shopOwnerNumber + SOLDOUT_OPTION_URL;
+  try {
+    const url = OWNER_SOLDOUT_OPTION_URL;
+    const data = await ApiCall(url, 'PUT', params);
+    return data;
+  } catch (error) {
+    //console.error('Failed to soldout option:', error);
+  }
+}
+
+const activeOption = async (optionIds) => {
+  if (!shopInfo.owner || !shopInfo.shops) {
+    //console.error('Owner or shop info is not available.');
+    return;
+  }
+  const shop = shopInfo.shops?.content?.at(0);
+  if (!shop) {
+    //console.error('Shop information is not available.');
+    return;
+  }
+  if (!Array.isArray(optionIds) || optionIds.length === 0) {
+    //console.error('Option IDs must be a non-empty array.');
+    return;
+  }
+  const params = {
+    optionIds: optionIds,
+  };
+  const OWNER_ACTIVE_OPTION_URL = OWNER_URL_V2 + shopInfo.owner.shopOwnerNumber + ACTIVE_OPTION_URL;
+  try {
+    const url = OWNER_ACTIVE_OPTION_URL;
+    const data = await ApiCall(url, 'PUT', params);
+    return data;
+  } catch (error) {
+    //console.error('Failed to activate option:', error);
+  }
+}
+
+const getAllMenus = async () => {
+  if (!shopInfo.owner || !shopInfo.shops) {
+    //console.error('Owner or shop info is not available.');
+    return;
+  }
+
+  const shop = shopInfo.shops?.content?.at(0);
+  if (!shop) {
+    //console.error('Shop information is not available.');
+    return;
+  }
+
+  const params = {
+    shopId: shop.shopNo,
+    page: 1,
+    size: 20,
+  };
+
+  const OWNER_MENU_LIST_URL = OWNER_URL_V2 + shopInfo.owner.shopOwnerNumber + GET_MENU_LIST_URL;
+
+  let menus = [];
+
+  while (true) {
+    try {
+      const url = OWNER_MENU_LIST_URL + makeGetParams(params);
+      const data = await ApiCall(url);
+      
+      if (!data || !data.data || !data.data.content) {
+        //console.error('No menu data found.');
+        return;
+      }
+
+      // 메뉴 데이터 처리
+      //console.log('Fetched menus:', data.data.content);
+
+      menus = menus.concat(data.data.content);
+
+      // 다음 페이지로 이동
+      if (data.data.last) {
+        break; // 마지막 페이지면 종료
+      }
+      params.page++;
+    } catch (error) {
+      //console.error('Failed to fetch menus:', error);
+      break;
+    }
+  }
+
+  return menus;
+}
+
+const getAllOptions = async () => {
+  if (!shopInfo.owner || !shopInfo.shops) {
+    //console.error('Owner or shop info is not available.');
+    return;
+  }
+
+  const shop = shopInfo.shops?.content?.at(0);
+  if (!shop) {
+    //console.error('Shop information is not available.');
+    return;
+  }
+
+  const params = {
+    page: 0,
+    size: 20,
+  };
+
+  const OWNER_OPTION_GROUP_URL = OWNER_URL_V1 + shopInfo.owner.shopOwnerNumber + GET_OPTION_GROUP_URL;
+
+  let options = [];
+
+  while (true) {
+    try {
+      const url = OWNER_OPTION_GROUP_URL + makeGetParams(params);
+      const data = await ApiCall(url);
+      
+      if (!data || !data.data || !data.data.content) {
+        //console.error('No option data found.');
+        return;
+      }
+
+      // 옵션 데이터 처리
+      //console.log('Fetched options:', data.data.content);
+      options = options.concat(data.data.content?.reduce((acc, group) => {
+        if (group.options && group.options.length > 0) {
+          group.options.forEach(option => {
+            acc.push({
+              ...option,
+              groupName: group.name,
+              groupId: group.id,
+            });
+          });
+        }
+        return acc;
+      }, []));
+
+      // 다음 페이지로 이동
+      if (data.data.last) {
+        break; // 마지막 페이지면 종료
+      }
+      params.page++;
+    } catch (error) {
+      //console.error('Failed to fetch options:', error);
+      break;
+    }
+  }
+
+  return options;
+}
+
+// 초기화 함수 호출
+getShopInfo().then(() => {
+  //console.log('Shop Info:', shopInfo);
+
+  // 초기 메뉴 리스트 가져오기
+  getAllMenus().then((menus) => {
+    //console.log('All Menus:', menus);
+  }).catch(error => {
+    //console.error('Error fetching all menus:', error);
+  });
+
+  // 초기 옵션 리스트 가져오기
+  getAllOptions().then((options) => {
+    //console.log('All Options:', options);
+  }).catch(error => {
+    //console.error('Error fetching all options:', error);
+  });
+}).catch(error => {
+  //console.error('Error fetching shop info:', error);
+});
